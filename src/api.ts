@@ -1,15 +1,37 @@
-export type Role = 'BUYER' | 'SELLER';
-export type Business = { id: string; legalName: string; tradeName: string; taxId: string; phone: string; address: string };
-export type Session = { accessToken: string; user: { id: string; email: string; role: Role }; business: Business };
+export type Rol = 'COMPRADOR' | 'VENDEDOR';
+
+export type Negocio = {
+  idNegocio: number;
+  razonSocial: string;
+  nombreComercial: string;
+  identificacionFiscal: string;
+  telefono: string;
+  direccion: string;
+};
+
+export type Sesion = {
+  accessToken: string;
+  cliente: { idCliente: number; email: string; rol: Rol };
+  negocio: Negocio;
+};
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
-async function request<T>(path: string, options: RequestInit = {}, token?: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
-  if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(Array.isArray(body.message) ? body.message[0] : body.message ?? 'Ocurrió un error inesperado.'); }
-  return response.status === 204 ? undefined as T : response.json();
+async function solicitud<T>(ruta: string, opciones: RequestInit = {}, token?: string): Promise<T> {
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    ...opciones,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...opciones.headers },
+  });
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.json().catch(() => ({}));
+    throw new Error(Array.isArray(cuerpo.message) ? cuerpo.message[0] : cuerpo.message ?? 'Ocurrió un error inesperado.');
+  }
+  return respuesta.status === 204 ? undefined as T : respuesta.json();
 }
+
 export const api = {
-  login: (payload: { email: string; password: string }) => request<Session>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
-  register: (payload: Omit<Session, 'accessToken' | 'user' | 'business'> & { email: string; password: string; role: Role; business: Omit<Business, 'id'> }) => request<Session>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
-  updateBusiness: (payload: Omit<Business, 'id'>, token: string) => request<Business>('/businesses/me', { method: 'PATCH', body: JSON.stringify(payload) }, token),
+  iniciarSesion: (datos: { email: string; password: string }) => solicitud<Sesion>('/auth/iniciar-sesion', { method: 'POST', body: JSON.stringify(datos) }),
+  registrar: (datos: { email: string; password: string; rol: Rol; negocio: Omit<Negocio, 'idNegocio'> }) => solicitud<Sesion>('/auth/registro', { method: 'POST', body: JSON.stringify(datos) }),
+  actualizarNegocio: (datos: Omit<Negocio, 'idNegocio'>, token: string) => solicitud<Negocio>('/negocios/mi-negocio', { method: 'PATCH', body: JSON.stringify(datos) }, token),
+  eliminarNegocio: (token: string) => solicitud<{ mensaje: string }>('/negocios/mi-negocio', { method: 'DELETE' }, token),
 };
