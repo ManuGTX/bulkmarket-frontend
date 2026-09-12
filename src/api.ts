@@ -30,8 +30,31 @@ async function solicitud<T>(ruta: string, opciones: RequestInit = {}, token?: st
 }
 
 export const api = {
-  iniciarSesion: (datos: { email: string; password: string }) => solicitud<Sesion>('/auth/iniciar-sesion', { method: 'POST', body: JSON.stringify(datos) }),
-  registrar: (datos: { email: string; password: string; rol: Rol; negocio: Omit<Negocio, 'idNegocio'> }) => solicitud<Sesion>('/auth/registro', { method: 'POST', body: JSON.stringify(datos) }),
-  actualizarNegocio: (datos: Omit<Negocio, 'idNegocio'>, token: string) => solicitud<Negocio>('/negocios/mi-negocio', { method: 'PATCH', body: JSON.stringify(datos) }, token),
-  eliminarNegocio: (token: string) => solicitud<{ mensaje: string }>('/negocios/mi-negocio', { method: 'DELETE' }, token),
+  iniciarSesion: (datos: { email: string; password: string }) =>
+    solicitud<Sesion>('/auth/iniciar-sesion', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+  registrar: (datos: {
+    email: string;
+    password: string;
+    rol: Rol;
+    negocio: Omit<Negocio, 'idNegocio'>;
+  }) =>
+    solicitud<Sesion>('/auth/registro', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+  actualizarNegocio: (
+    datos: Omit<Negocio, 'idNegocio'>,
+    token: string
+  ) =>
+    solicitud<Negocio>('/negocios/mi-negocio', {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    }, token),
+  eliminarNegocio: (token: string) =>
+    solicitud<{ mensaje: string }>('/negocios/mi-negocio', {
+      method: 'DELETE',
+    }, token),
 };
