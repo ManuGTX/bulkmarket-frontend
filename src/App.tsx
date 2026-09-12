@@ -158,7 +158,7 @@ function Registro({ alRegistrarse }: { alRegistrarse: (sesion: Sesion) => void }
           placeholder="XX-XXXXXXXX-X"
           inputMode="numeric"
           soloNumeros
-          maximoDigitos={11}
+          exactDigitos={11}
           formatear={formatearCuit}
           maxLength={13}
           pattern="\\d{2}-\\d{8}-\\d"
@@ -173,6 +173,7 @@ function Registro({ alRegistrarse }: { alRegistrarse: (sesion: Sesion) => void }
           inputMode="numeric"
           soloNumeros
           maximoDigitos={10}
+          minDigitos={8}
           formatear={formatearTelefono}
           maxLength={12}
           pattern="\\d{2} \\d{4}-\\d{4}"
@@ -363,6 +364,22 @@ function Panel({ sesion, guardarSesion, cerrarSesion }: { sesion: Sesion; guarda
 function soloDigitos(valor: string, maximoDigitos: number) { return valor.replace(/\D/g, '').slice(0, maximoDigitos); }
 function formatearCuit(valor: string) { const digitos = soloDigitos(valor, 11); if (digitos.length <= 2) return digitos; if (digitos.length <= 10) return `${digitos.slice(0, 2)}-${digitos.slice(2)}`; return `${digitos.slice(0, 2)}-${digitos.slice(2, 10)}-${digitos.slice(10)}`; }
 function formatearTelefono(valor: string) { const digitos = soloDigitos(valor, 10); if (digitos.length <= 2) return digitos; if (digitos.length <= 6) return `${digitos.slice(0, 2)} ${digitos.slice(2)}`; return `${digitos.slice(0, 2)} ${digitos.slice(2, 6)}-${digitos.slice(6)}`; }
-function Campo({ etiqueta, valor, alCambiar, tipo = 'text', hint, soloNumeros = false, maximoDigitos, formatear, ...props }: { etiqueta: string; valor: string; alCambiar: (valor: string) => void; tipo?: string; hint?: string; soloNumeros?: boolean; maximoDigitos?: number; formatear?: (valor: string) => string; placeholder?: string; requerido?: boolean; inputMode?: 'numeric'; maxLength?: number; pattern?: string; title?: string }) { const valorVisible = formatear ? formatear(valor) : valor; const patron = props.pattern?.split('\\\\').join('\\'); return <label className="field"><span>{etiqueta}</span><input type={tipo} value={valorVisible} onChange={(evento) => alCambiar(soloNumeros ? soloDigitos(evento.target.value, maximoDigitos ?? Number.MAX_SAFE_INTEGER) : evento.target.value)} {...props} pattern={patron} />{hint && <small>{hint}</small>}</label>; }
+function Campo({ etiqueta, valor, alCambiar, tipo = 'text', hint, soloNumeros = false, maximoDigitos, formatear, minDigitos, exactDigitos, ...props }: { etiqueta: string; valor: string; alCambiar: (valor: string) => void; tipo?: string; hint?: string; soloNumeros?: boolean; maximoDigitos?: number; formatear?: (valor: string) => string; placeholder?: string; requerido?: boolean; inputMode?: 'numeric'; maxLength?: number; pattern?: string; title?: string; minDigitos?: number; exactDigitos?: number }) {
+  const valorVisible = formatear ? formatear(valor) : valor;
+  const patron = props.pattern?.split('\\\\').join('\\');
+  return <label className="field"><span>{etiqueta}</span><input type={tipo} value={valorVisible} onChange={(evento) => {
+    let input = evento.target.value;
+    if (soloNumeros) {
+      const digitsOnly = input.replace(/\D/g, '');
+      let max = maximoDigitos ?? Number.MAX_SAFE_INTEGER;
+      if (exactDigitos !== undefined) {
+        max = exactDigitos;
+      }
+      const limited = digitsOnly.slice(0, max);
+      alCambiar(soloDigitos(limited, max));
+    } else {
+      alCambiar(input);
+    }
+  }} {...props} pattern={patron} />{hint && <small>{hint}</small>}</label>; }
 function ErrorFormulario({ error }: { error: string }) { return error ? <p className="error" role="alert">{error}</p> : null; }
 export default App;
