@@ -30,6 +30,17 @@ async function solicitud<T>(ruta: string, opciones: RequestInit = {}, token?: st
 }
 
 export const api = {
+  crearProducto: async (datos: FormData, token: string): Promise<void> => {
+    const respuesta = await fetch(`${API_URL}/productos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: datos,
+    });
+    if (!respuesta.ok) {
+      const cuerpo = await respuesta.json().catch(() => ({}));
+      throw new Error(Array.isArray(cuerpo.message) ? cuerpo.message[0] : cuerpo.message ?? 'No se pudo crear el producto.');
+    }
+  },
   iniciarSesion: (datos: { email: string; password: string }) =>
     solicitud<Sesion>('/auth/iniciar-sesion', {
       method: 'POST',

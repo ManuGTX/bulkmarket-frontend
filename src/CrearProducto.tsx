@@ -1,0 +1,105 @@
+﻿import { FormEvent, useEffect, useState } from 'react';
+import { api } from './api';
+
+export default function CrearProducto({ token }: { token: string }) {
+  const [imagenes, setImagenes] = useState<File[]>([]);
+  const [vistas, setVistas] = useState<string[]>([]);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    const urls = imagenes.map(imagen => URL.createObjectURL(imagen));
+    setVistas(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [imagenes]);
+
+  async function enviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (guardando) return;
+    const formulario = evento.currentTarget;
+    const datos = new FormData(formulario);
+    setError('');
+    setMensaje('');
+
+    for (const campo of ['nombre', 'descripcion', 'categoria']) {
+      const valor = String(datos.get(campo)).trim();
+      if (!valor) {
+        setError('Completá el nombre, la descripción y la categoría.');
+        return;
+      }
+      datos.set(campo, valor);
+    }
+
+    if (imagenes.length === 0 || imagenes.length > 5) {
+      setError('Seleccioná entre una y cinco imágenes.');
+      return;
+    }
+    for (const imagen of imagenes) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(imagen.type) || imagen.size === 0 || imagen.size > 2 * 1024 * 1024) {
+        setError('Las imágenes deben ser JPG, PNG o WebP de hasta 2 MB.');
+        return;
+      }
+    }
+
+    setGuardando(true);
+    try {
+      await api.crearProducto(datos, token);
+      formulario.reset();
+      setImagenes([]);
+      setMensaje('Producto creado correctamente.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo crear el producto.');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <section className="business-panel" id="crear-producto">
+      <h2>Crear producto</h2>
+      <form onSubmit={enviar}>
+        <fieldset className="producto-campos" disabled={guardando}>
+          <label className="field">
+            <span>Nombre</span>
+            <input name="nombre" maxLength={150} required />
+          </label>
+          <label className="field">
+            <span>Descripción</span>
+            <textarea name="descripcion" rows={4} required />
+          </label>
+          <label className="field">
+            <span>Categoría</span>
+            <input name="categoria" maxLength={100} required />
+          </label>
+          <div className="form-grid">
+            <label className="field">
+              <span>Precio base por unidad</span>
+              <input name="precioBase" type="number" min="0.01" max="9999999999.99" step="0.01" required />
+            </label>
+            <label className="field">
+              <span>Stock</span>
+              <input name="stock" type="number" min="0" max="2147483647" step="1" required />
+            </label>
+          </div>
+          <label className="field">
+            <span>Imágenes</span>
+            <input name="imagenes" type="file" accept="image/jpeg,image/png,image/webp" multiple required
+              onChange={evento => {
+                setImagenes(Array.from(evento.target.files ?? []));
+                setError('');
+                setMensaje('');
+              }} />
+            <small>Hasta 5 imágenes JPG, PNG o WebP de 2 MB cada una.</small>
+          </label>
+          <div className="producto-imagenes">
+            {vistas.map((vista, indice) => <img key={vista} src={vista} alt={imagenes[indice]?.name ?? 'Imagen del producto'} />)}
+          </div>
+          <button type="submit" className="primary">{guardando ? 'Guardando…' : 'Crear producto'}</button>
+        </fieldset>
+        {error && <p className="error" role="alert">{error}</p>}
+        {mensaje && <p className="success" role="status">{mensaje}</p>}
+      </form>
+    </section>
+  );
+}

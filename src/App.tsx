@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { api, Negocio, Rol, Sesion } from './api';
+import CrearProducto from './CrearProducto';
 
 type Vista = 'ingreso' | 'registro';
 const negocioInicial = { razonSocial: '', nombreComercial: '', identificacionFiscal: '', telefono: '', direccion: '' };
@@ -357,6 +358,9 @@ function Panel({ sesion, guardarSesion, cerrarSesion }: { sesion: Sesion; guarda
           </button>
         </section>
       </section>
+      {sesion.cliente.rol === 'VENDEDOR' && (
+        <CrearProducto token={sesion.accessToken} />
+      )}
     </main>
   );
 }
